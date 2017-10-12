@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
+# SOURCE: https://gist.github.com/yanofsky/5436496
 
 import os
 import sys
