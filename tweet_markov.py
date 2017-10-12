@@ -43,8 +43,10 @@ def sanitize(word):
     """
     to_replace = '\n\t\r()<>\'\"'
     to_keep = '.!?,i:;@#$%^&*_+= '
+
+    # Build list of characters to replace
     for char in word:
-        if (not char.isalnum() and char not in to_keep) or char in to_replace:
+        if not char.isalnum() and char not in to_keep and char in to_replace:
             to_replace += char
     for char in to_replace:
         word = word.replace(char, ' ')
