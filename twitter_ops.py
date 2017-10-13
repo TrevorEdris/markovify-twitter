@@ -89,6 +89,19 @@ def get_all_tweets(screen_name):
     return outtweets
 
 
+def post_tweet(tweet):
+    """
+    Posts the tweet to twitter
+
+    :param tweet: The tweet to publish
+    """
+    # authorize twitter, initialize tweepy
+    auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+    auth.set_access_token(access_key, access_secret)
+    api = tweepy.API(auth)
+    api.update_status(tweet)
+
+
 if __name__ == '__main__':
     # pass in the username of the account you want to download
     tweets = get_all_tweets("TrevorEdris")

@@ -1,10 +1,11 @@
 import argparse
 import random
 
-from tweet_dumper import (
+from twitter_ops import (
     BEGIN,
     END,
-    get_all_tweets
+    get_all_tweets,
+    post_tweet
 )
 
 NORMAL = '\033[00m'
@@ -147,7 +148,7 @@ def build_random_tweet(chain, key_length, msg_len=25, tries=10):
                 next_word = random.choice(chain[' '.join(words)])
                 if next_word == END:
                     if test_generated_tweet(sentence.split(' ')):
-                        return green(sentence)
+                        return sentence, True
                     else:
                         invalid = True
                         break
@@ -164,9 +165,9 @@ def build_random_tweet(chain, key_length, msg_len=25, tries=10):
             if not sentence[-1] in '.?!':
                 sentence += random.choice(list('.?!'))
             if test_generated_tweet(sentence.split(' ')):
-                return green(sentence)
+                return sentence, True
 
-    return red('UNABLE TO GENERATE ORIGINAL TWEET')
+    return 'UNABLE TO GENERATE ORIGINAL TWEET', False
 
 
 def test_generated_tweet(words, max_chars=140):
@@ -218,6 +219,14 @@ if __name__ == '__main__':
     title = f'{s:=^80}'
 
     chain = build_markov_chain_from_tweets(tweets, args.key_length)
-    full_msg = '\n\n'.join([build_random_tweet(chain, args.key_length) for i in range(1)])
+    random_tweet, original = build_random_tweet(chain, args.key_length)
     print(blue('\n' + title + '\n'))
-    print(full_msg)
+    if original:
+        print(green(random_tweet))
+        tweet_or_nah = input('Post to twitter? (Y/n): ')
+        if tweet_or_nah.lower() in ['y', 'yes', 'yeah', 'yup', 'yeppers']:
+            print('Posting to twitter...')
+            post_tweet(random_tweet)
+            print('Done.')
+    else:
+        print(red(random_tweet))
