@@ -20,6 +20,9 @@ access_secret = os.environ['TWITTER_API_ACCESS_SECRET']
 BEGIN = '__BEGIN__'
 END = '__END__'
 
+# Output path to store tweets
+TWEET_STASH_DIR = 'tweet_stash'
+
 
 def get_all_tweets(screen_name):
     """
@@ -29,11 +32,11 @@ def get_all_tweets(screen_name):
     :returns: List of tweets, where each tweet is a list of words
     """
 
-    if not os.path.exists('tweet_stash'):
-        os.mkdir('tweet_stash')
+    if not os.path.exists(TWEET_STASH_DIR):
+        os.mkdir(TWEET_STASH_DIR)
 
-    if os.path.exists(f'tweet_stash/{screen_name}_tweets.csv'):
-        with open(f'tweet_stash/{screen_name}_tweets.csv') as fp:
+    if os.path.exists(f'{TWEET_STASH_DIR}/{screen_name}_tweets.csv'):
+        with open(f'{TWEET_STASH_DIR}/{screen_name}_tweets.csv') as fp:
             lines = fp.readlines()
         return [[word.replace('\n', '') for word in line.split(' ')] for line in lines]
 
@@ -81,7 +84,7 @@ def get_all_tweets(screen_name):
     outtweets = [[word.strip() for word in tweet.split(' ')] for tweet in outtweets]
 
     # write the csv
-    with open(f'tweet_stash/{screen_name}_tweets.csv', 'w') as f:
+    with open(f'{TWEET_STASH_DIR}/{screen_name}_tweets.csv', 'w') as f:
             for tweet in outtweets:
                 tweet_str = ' '.join(tweet)
                 f.write(f'{tweet_str}\n')
