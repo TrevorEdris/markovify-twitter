@@ -18,7 +18,9 @@ Run the provided install script
 ```
 
 This script assumes that you have a virtual environment active. If you are not sure what a virtual
-environment is, check out this link https://virtualenvwrapper.readthedocs.io/en/latest/
+environment is, check out this link 
+
+https://virtualenvwrapper.readthedocs.io/en/latest/
 
 If you do not wish to use a virtual environment, then run this command. In general though,
 a virtual environment is recommended to avoid package version conflicts with other projects.
@@ -73,10 +75,13 @@ Done.
 Here is a link to the twitter account that I linked the program to from my laptop. Your version
 will not be able to tweet directly from this account, since tweeting directly from code requires
 a dev twitter account (free to set up) as well as an API key (also free to set up).
+
 https://twitter.com/MarkovifyErthng
 
 If you are interested in setting one up for yourself, check out these links:
+
 https://developer.twitter.com/en/docs/basics/authentication/guides/access-tokens
+
 https://apps.twitter.com/
 
 
