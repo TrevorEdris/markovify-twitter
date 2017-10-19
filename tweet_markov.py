@@ -123,7 +123,7 @@ def build_markov_chain_from_tweets(tweets, key_length, chain=None):
     return chain
 
 
-def build_random_tweet(chain, key_length, msg_len=25, tries=10):
+def build_random_tweet(chain, key_length, users=[], msg_len=25, tries=10):
     """
     Attemps to generate a random tweet based off the chain
 
@@ -143,10 +143,11 @@ def build_random_tweet(chain, key_length, msg_len=25, tries=10):
 
         # Generate a maximum of msg_len words for the sentence
         invalid = False
-        for i in range(msg_len - key_length):
+        for i in range(msg_len - key_length - len(users)):
             try:
                 next_word = random.choice(chain[' '.join(words)])
                 if next_word == END:
+                    sentence += f' {" ".join("@" + u for u in users)}'
                     if test_generated_tweet(sentence.split(' ')):
                         return sentence, True
                     else:
@@ -164,6 +165,7 @@ def build_random_tweet(chain, key_length, msg_len=25, tries=10):
         if not invalid:
             if not sentence[-1] in '.?!':
                 sentence += random.choice(list('.?!'))
+            sentence += f' {" ".join("@" + u for u in users)}'
             if test_generated_tweet(sentence.split(' ')):
                 return sentence, True
 
@@ -199,27 +201,29 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='''
     Generates a random tweet based off another user's tweets''')
-    parser.add_argument('user', type=str,
-            help='Username of source twitter account')
+    parser.add_argument('users', type=str, nargs='+', metavar='U',
+            help='Usernames of twitter accounts to build tweets from (space-separated list, unamea unameb unamec)')
     parser.add_argument('-k', '--key_length', type=int,
             help='Number of words to use as key in the chain, max of 10')
     args = parser.parse_args()
 
-    user = args.user
+    users = args.users
 
     if not args.key_length:
         args.key_length = 1
 
-    tweets = get_all_tweets(user)
+    tweets = []
+    for user in users:
+        tweets += get_all_tweets(user)
     rejoined_text = '\n'.join([' '.join([word for word in tweet]) for tweet in tweets])
     rejoined_text_lower = rejoined_text.lower()
 
-    title = f' Random Tweets based on {user} '
+    title = f' Tweet from {" and ".join(users)} '
     s = f' {title}--> key_len: {args.key_length} '
     title = f'{s:=^80}'
 
     chain = build_markov_chain_from_tweets(tweets, args.key_length)
-    random_tweet, original = build_random_tweet(chain, args.key_length)
+    random_tweet, original = build_random_tweet(chain, args.key_length, users=users)
     print(blue('\n' + title + '\n'))
     if original:
         print(green(random_tweet))
