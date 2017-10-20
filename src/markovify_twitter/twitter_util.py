@@ -21,7 +21,7 @@ BEGIN = '__BEGIN__'
 END = '__END__'
 
 # Output path to store tweets
-TWEET_STASH_DIR = 'tweet_stash'
+TWEET_STASH_DIR = os.path.join(os.path.dirname(__file__), 'tweet_stash')
 
 
 def get_all_tweets(screen_name):

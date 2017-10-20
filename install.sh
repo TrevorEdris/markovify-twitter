@@ -19,6 +19,12 @@ function install() {
     cd ..
 }
 
+function install_testing() {
+    cd src
+    pip install -e '.[testing]'
+    cd ..
+}
+
 # If no arguments provided
 if [ $# -eq 0 ] 
 then
@@ -39,12 +45,18 @@ then
 else
 
     # If the first arg provided is not 'no-venv'
-    if [ $1 != 'no-venv' ]
+    if [ $1 = 'no-venv' ]
     then
-        echo "Expected provided argument to be 'no-venv', indicating that you want to"
-        echo "install this even though you do not have a virtual environment active"
-    else
         echo "Installing!"
         install
+    elif [ $1 = 'testing' ]
+    then
+        echo "Installing testing packages!"
+        install_testing
+    else
+        echo "Expected provided argument to be 'no-venv', indicating that you want to"
+        echo "install this even though you do not have a virtual environment active"
+        echo "OR argument should be 'testing', indicating that you want to install"
+        echo "the necessary packages to run the provided tests"
     fi
 fi
