@@ -1,6 +1,9 @@
 import argparse
+import os
 import random
 import sys
+
+from datetime import datetime
 
 from markovify_twitter.twitter_util import (
     BEGIN,
@@ -41,6 +44,11 @@ class MarkovTweet():
     # Remove '@Some_User-Mention.1337'
     # Remove urls
     PATTERNS_TO_REMOVE = [TWITTER_MENTION_PATTERN, URL_PATTERN]
+
+    # Dir/File to save generated tweets in
+    GENERATED_TWEETS_DIR = os.path.join(os.path.dirname(__file__), 'generated_tweets')
+    GENERATED_TWEETS_FILE = os.path.join(GENERATED_TWEETS_DIR, 'generated_tweets.csv')
+    TWEET_DELIMITER = '__(ಠ_ಠ)__'
 
     def __init__(self):
         self.parser = self.create_parser()
@@ -109,9 +117,6 @@ class MarkovTweet():
             # Get a key from the words that begin a sentence
             words = random.choice(chain[BEGIN]).split(' ')
             sentence = list(words)  # Need a copy of words, sentence = words won't work
-            #sentence = [words[0].capitalize()]
-            #if key_length > 1:
-            #    sentence += words[1:]
 
             # Generate a maximum of msg_len words for the sentence
             invalid = False
@@ -140,7 +145,7 @@ class MarkovTweet():
                     end = sentence[-1]
                     del sentence[-1]
                     sentence.append(f'{end}{random.choice(list(".?!"))}')
-                sentence = ' '.join(remove_words(sentence, self.WORDS_TO_REMOVE, self.PATTERNS_TO_REMOVE))
+                sentence = remove_words(sentence, self.WORDS_TO_REMOVE, self.PATTERNS_TO_REMOVE)
                 sentence += [f'@{u}' for u in users]
                 if self.test_generated_tweet(sentence):
                     return ' '.join(sentence), True
@@ -171,8 +176,39 @@ class MarkovTweet():
                 return False
         return True
 
-    def run(self, args=None):
+    def save_tweet(self, tweet, users):
+        """
+        Saves the generated tweet to a csv file for use in upcomming features
 
+        :param tweet: String containing the generated tweet
+        :param users: List of users tweet was generated from
+        """
+
+        if not os.path.exists(self.GENERATED_TWEETS_DIR):
+            os.mkdir(self.GENERATED_TWEETS_DIR)
+
+        # For some reason, fp.readlines() always returned [] when
+        # using 'a+' mode. Might revisit later, but this works
+        # Probably has to do with seeking to beginning of file
+        last_tweet_id = -1
+        next_tweet_id = 0
+        if os.path.exists(self.GENERATED_TWEETS_FILE):
+            with open(self.GENERATED_TWEETS_FILE, 'r') as fp:
+                lines = fp.readlines()
+                if lines:
+                    last_tweet_id = int(lines[-1].split(self.TWEET_DELIMITER)[0])
+                next_tweet_id = str(last_tweet_id + 1)
+
+        with open(self.GENERATED_TWEETS_FILE, 'a+') as fp:
+            tstamp = datetime.now().strftime('%B %d, %Y %H:%M:%S')
+            fp.write(f'{self.TWEET_DELIMITER}'.join([next_tweet_id, tweet] + users + [tstamp]) + '\n')
+
+    def run(self, args=None):
+        """
+        Main control function
+        """
+
+        # Get the args
         if not args.users:
             sys.stderr.write('Users is a required argument')
             self.parser.print_usage()
@@ -184,10 +220,12 @@ class MarkovTweet():
         users = args.users
         key_length = args.key_length or 1
 
+        # Combine tweet history of all users provided
         tweets = []
         for user in users:
             tweets += get_all_tweets(user)
 
+        # Rejoin the tweets into a string separated by '\n', also store lowercase version
         self.rejoined_text = '\n'.join([' '.join([word for word in tweet]) for tweet in tweets])
         self.rejoined_text_lower = self.rejoined_text.lower()
 
@@ -195,8 +233,16 @@ class MarkovTweet():
         s = f' {title}--> key_len: {key_length} '
         title = f'{s:=^80}'
 
+        # Build the chain from the list of tweets
         chain = self.build_markov_chain_from_tweets(tweets, key_length)
+
+        # Generate a random tweet from the chain
         random_tweet, original = self.build_random_tweet(chain, key_length, users=users)
+
+        # Save the generated tweet to a csv
+        self.save_tweet(random_tweet, users)
+
+        # Print the tweet and maybe send it to twitter
         print(blue('\n' + title + '\n'))
         if original:
             print(green(random_tweet))
