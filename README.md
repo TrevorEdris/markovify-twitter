@@ -29,6 +29,21 @@ a virtual environment is recommended to avoid package version conflicts with oth
 ./install no-venv
 ```
 
+### Testing
+
+If you wish to run the provided tests (albeit, not many), run this command
+
+```shell
+./install testing
+```
+
+Then you will be able to run the tests
+
+```shell
+cd src/tests
+py.test
+```
+
 
 ## USAGE
 

@@ -12,7 +12,10 @@ from markovify_twitter.twitter_util import (
 from markovify_twitter.util import (
     blue,
     green,
-    red
+    red,
+    remove_words,
+    TWITTER_MENTION_PATTERN,
+    URL_PATTERN
 )
 
 
@@ -31,6 +34,14 @@ class MarkovTweet():
     rejoined_text = ''
     rejoined_text_lower = ''
 
+    # These words will be removed from any renerated tweet
+    # All words should be lower-case
+    WORDS_TO_REMOVE = ['rt']
+
+    # Remove '@Some_User-Mention.1337'
+    # Remove urls
+    PATTERNS_TO_REMOVE = [TWITTER_MENTION_PATTERN, URL_PATTERN]
+
     def __init__(self):
         self.parser = self.create_parser()
 
@@ -46,6 +57,7 @@ class MarkovTweet():
                       Multiple chains can be combined.
             EXAMPLE:
                 build_markov_chain_from_tweets(trump_tweets, 1, build_markov_chain_from_tweets(bernie_sanders_tweets, 1))
+                      OR just combine their source arrays and call the function once (much easier)
         """
         if chain is None:
             chain = {}
@@ -96,9 +108,10 @@ class MarkovTweet():
 
             # Get a key from the words that begin a sentence
             words = random.choice(chain[BEGIN]).split(' ')
-            sentence = words[0].capitalize()
-            if key_length > 1:
-                sentence += ' ' + ' '.join(words[1:])
+            sentence = list(words)  # Need a copy of words, sentence = words won't work
+            #sentence = [words[0].capitalize()]
+            #if key_length > 1:
+            #    sentence += words[1:]
 
             # Generate a maximum of msg_len words for the sentence
             invalid = False
@@ -106,13 +119,14 @@ class MarkovTweet():
                 try:
                     next_word = random.choice(chain[' '.join(words)])
                     if next_word == END:
-                        sentence += f' {" ".join("@" + u for u in users)}'
-                        if self.test_generated_tweet(sentence.split(' ')):
-                            return sentence, True
+                        sentence = remove_words(sentence, self.WORDS_TO_REMOVE, self.PATTERNS_TO_REMOVE)
+                        sentence += [f'@{u}' for u in users]
+                        if self.test_generated_tweet(sentence):
+                            return ' '.join(sentence), True
                         else:
                             invalid = True
                             break
-                    sentence += ' ' + next_word
+                    sentence.append(next_word)
                     del words[0]
                     words.append(next_word)
                 except KeyError:
@@ -122,11 +136,14 @@ class MarkovTweet():
             # If here, reached msg_len OR invalid sentence
             # Make sure sentence ends with punctuation
             if not invalid:
-                if not sentence[-1] in '.?!':
-                    sentence += random.choice(list('.?!'))
-                sentence += f' {" ".join("@" + u for u in users)}'
-                if self.test_generated_tweet(sentence.split(' ')):
-                    return sentence, True
+                if not sentence[-1][-1] in '.?!':
+                    end = sentence[-1]
+                    del sentence[-1]
+                    sentence.append(f'{end}{random.choice(list(".?!"))}')
+                sentence = ' '.join(remove_words(sentence, self.WORDS_TO_REMOVE, self.PATTERNS_TO_REMOVE))
+                sentence += [f'@{u}' for u in users]
+                if self.test_generated_tweet(sentence):
+                    return ' '.join(sentence), True
 
         return 'UNABLE TO GENERATE ORIGINAL TWEET', False
 
@@ -161,6 +178,9 @@ class MarkovTweet():
             self.parser.print_usage()
             sys.exit(1)
 
+        if args.keep_urls and URL_PATTERN in self.PATTERNS_TO_REMOVE:
+            self.PATTERNS_TO_REMOVE.remove(URL_PATTERN)
+
         users = args.users
         key_length = args.key_length or 1
 
@@ -172,7 +192,7 @@ class MarkovTweet():
         self.rejoined_text_lower = self.rejoined_text.lower()
 
         title = f' Tweet from {" and ".join(users)} '
-        s = f' {title}--> key_len: {args.key_length} '
+        s = f' {title}--> key_len: {key_length} '
         title = f'{s:=^80}'
 
         chain = self.build_markov_chain_from_tweets(tweets, key_length)
@@ -195,6 +215,8 @@ class MarkovTweet():
                 help='Usernames of twitter accounts to build tweets from (space-separated list, unamea unameb unamec)')
         parser.add_argument('-k', '--key_length', type=int,
                 help='Number of words to use as key in the chain, max of 10')
+        parser.add_argument('--keep-urls', action='store_const', const=True, default=False,
+                help='Keep urls in the generated tweet')
         return parser
 
     @classmethod
