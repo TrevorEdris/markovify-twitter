@@ -102,8 +102,8 @@ https://apps.twitter.com/
 
 ## TODO
 
-* Prune out the Rt tag
-* Add option to store generated tweets
-* Add option to tweet a previously generated tweet
-* Add tests
-* Fix the installed package name
+- [x] Prune out the Rt tag
+- [ ] Add option to store generated tweets
+- [ ] Add option to tweet a previously generated tweet
+- [ ] Add tests
+- [ ] Fix the installed package name
