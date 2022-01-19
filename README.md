@@ -1,4 +1,4 @@
-# markovify_twitter
+# markovify-twitter
 Generates random tweets based of a specific user's twitter history
 
 ## Requirements
